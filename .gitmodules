@@ -1,0 +1,9 @@
+[submodule "imageutilities"]
+	path = imageutilities
+	url = https://github.com/VLOGroup/imageutilities
+[submodule "libcaer"]
+	path = libcaer
+	url = https://github.com/inilabs/libcaer
+[submodule "cnpy"]
+	path = cnpy
+	url = https://github.com/rogersce/cnpy
