@@ -1,8 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>gpu4vision_logo.png</file>
-        <file>icg_logo.png</file>
-        <file>tu_logo.png</file>
         <file>play.png</file>
         <file>pause.png</file>
         <file>fileopen.png</file>

@@ -4,10 +4,10 @@ This repository provides software for our publication "Real-Time Panoramic Track
 If you use this code please cite the following publication:
 ~~~
 @inproceedings{reinbacher_iccp2017,
-  author = {Christian Reinbacher and Gottfried Graber and Thomas Pock},
+  author = {Christian Reinbacher and Gottfried Munda and Thomas Pock},
   title = {{Real-Time Panoramic Tracking for Event Cameras}},
   booktitle = {2017 International Conference on Computational Photography (ICCP)},
-  year = {2016},
+  year = {2017},
 }
 ~~~
 
@@ -19,7 +19,7 @@ git submodule update --init --recursive
 ~~~
 after cloning.
 
-This software requies:
+This software requires:
  - GCC >= 4.9
  - CMake >= 3.2
  - Qt >= 5.6
