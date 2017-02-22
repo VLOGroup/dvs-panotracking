@@ -33,7 +33,7 @@ class TrackingWorker : public QThread
     Q_OBJECT
     void run() Q_DECL_OVERRIDE;
 public:
-    TrackingWorker(int output_scale, const Parameters& cam_parameters,int width=128, int height=128, int device_number=0, float upscale=1.f);
+    TrackingWorker(const Parameters& cam_parameters, int width=128, int height=128, int device_number=0, float upscale=1.f);
     void addEvents(std::vector<Event>& events);
     void saveEvents(std::string filename);
     void saveCurrentState(std::string filename);
@@ -41,14 +41,11 @@ public:
     Eigen::Vector3f getPose(void){return pose_;}
 
 signals:
-    void update_output(iu::ImageGpu_32f_C1*,float,float);
     void update_output(iu::ImageGpu_8u_C4*);
-    void update_events(iu::ImageGpu_32f_C1*,float,float);
     void update_info(const QString&,int);
 
 public slots:
     void stop();
-    void updateJustDisplay(bool value){just_display_ = value;}
     void updateEventsPerImage(int value){events_per_image_ = value;}
     void updateIterations(int value){iterations_ = value;}
     void updateImageSkip(int value){image_skip_ = value;}
@@ -70,7 +67,6 @@ protected:
     int height_;
     Parameters camera_parameters_;
 
-    bool just_display_;
     bool show_camera_pose_;
     bool show_events_;
     int device_number_;
@@ -84,8 +80,6 @@ protected:
     QMutex mutex_events_;
     iu::ImageGpu_32f_C1 *output_;
     iu::ImageGpu_8u_C4 *output_color_;
-    iu::ImageGpu_32f_C1 *output_events_;
-    iu::ImageGpu_32f_C1 *output_events_disp_;
     iu::ImageGpu_32f_C1 *occurences_;
     iu::ImageGpu_32f_C1 *normalization_;
 

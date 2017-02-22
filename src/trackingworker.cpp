@@ -26,7 +26,7 @@
 #include "iu/iumath.h"
 #include "eigenhelpers.h"
 
-TrackingWorker::TrackingWorker(int output_scale, const Parameters &cam_parameters, int width, int height, int device_number, float upscale)
+TrackingWorker::TrackingWorker(const Parameters &cam_parameters, int width, int height, int device_number, float upscale)
 {
     device_number_ = device_number;
     CudaSafeCall(cudaSetDevice(device_number_));
@@ -41,8 +41,6 @@ TrackingWorker::TrackingWorker(int output_scale, const Parameters &cam_parameter
     iu::math::fill(*normalization_, 1.f);
     iu::math::fill(*output_, 0.f);
 
-    output_events_ = new iu::ImageGpu_32f_C1(width_,height_);
-    output_events_disp_ = new iu::ImageGpu_32f_C1(width_*output_scale,height_*output_scale);
     events_per_image_=1500;
     iterations_ = 10;
     image_skip_ = 5;
@@ -71,9 +69,8 @@ TrackingWorker::TrackingWorker(int output_scale, const Parameters &cam_parameter
     lambda_b_ = 10.f;
     alpha_ = 0.4f;
 
-    just_display_ = false;
     show_camera_pose_ = true;
-    show_events_ = false;
+    show_events_ = true;
 }
 
 void TrackingWorker::addEvents(std::vector<Event> &events)
@@ -164,28 +161,22 @@ void TrackingWorker::track(std::vector<Event> &events)
     }
     iu::copy(events_cpu_,events_gpu_);
 
-    if(!just_display_) {
-        if(image_id_>10){ // First few poses are crap anyhow, since there is no map.
+    if(image_id_>10){ // First few poses are crap anyhow, since there is no map.
+        timer.start();
+        bool successfull = updatePose();
+        time_track = timer.elapsed();
+        if(successfull && tracking_quality_>0.25f) {// first few events often contain only noise. Update map only when tracking is good (arbitrary th).
             timer.start();
-            bool successfull = updatePose();
-            time_track = timer.elapsed();
-            if(successfull && tracking_quality_>0.25f) {// first few events often contain only noise. Update map only when tracking is good (arbitrary th).
-                timer.start();
-                cuda::updateMap(output_,occurences_,normalization_,events_gpu_,make_float3(pose_(0),pose_(1),pose_(2)),make_float3(old_pose_(0),old_pose_(1),old_pose_(2)),width_,height_);
-                time_map = timer.elapsed();
-            }
-        } else {
             cuda::updateMap(output_,occurences_,normalization_,events_gpu_,make_float3(pose_(0),pose_(1),pose_(2)),make_float3(old_pose_(0),old_pose_(1),old_pose_(2)),width_,height_);
+            time_map = timer.elapsed();
         }
+    } else {
+        cuda::updateMap(output_,occurences_,normalization_,events_gpu_,make_float3(pose_(0),pose_(1),pose_(2)),make_float3(old_pose_(0),old_pose_(1),old_pose_(2)),width_,height_);
     }
     image_id_++;
     if(image_skip_>0 && (image_id_ % image_skip_)==0) {
 
         emit update_info(tr("Track: %1ms Map: %2ms. Quality: %3").arg(time_track).arg(time_map).arg(tracking_quality_),0);
-        iu::math::fill(*output_events_,1);
-        cuda::setEvents(output_events_,events_gpu_);
-        cuda::upsample(output_events_,output_events_disp_,cuda::UPSAMPLE_NEAREST);
-        emit update_events(output_events_disp_,0,1);
         cuda::createOutput(output_color_,output_,show_events_? events_gpu_:NULL,make_float3(pose_(0),pose_(1),pose_(2)),width_,height_,show_camera_pose_?tracking_quality_:-1.f);
         emit update_output(output_color_);
 
@@ -277,7 +268,6 @@ bool TrackingWorker::updatePose()
 void TrackingWorker::saveCurrentState(std::string filename)
 {
     saveState(filename,output_color_);
-    saveState(filename + "events",output_events_,true,false,false);
 }
 
 void TrackingWorker::clearEvents()

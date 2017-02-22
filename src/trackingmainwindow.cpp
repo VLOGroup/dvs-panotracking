@@ -34,7 +34,6 @@
 
 TrackingMainWindow::TrackingMainWindow(char *camera_configuration_file, int device_number) : QMainWindow(NULL)
 {
-    int scale = 2;
 #ifdef DAVIS
     int width = 240;
     int height = 180;
@@ -43,7 +42,7 @@ TrackingMainWindow::TrackingMainWindow(char *camera_configuration_file, int devi
     int height = 128;
 #endif
     parameters_.readFromfile(camera_configuration_file);
-    tracking_worker_ = new TrackingWorker(scale,parameters_,width,height, device_number,1.5f);
+    tracking_worker_ = new TrackingWorker(parameters_,width,height, device_number,1.5f);
     camera_worker_ = new DVSCameraWorker(tracking_worker_);
 
     std::cout << parameters_.K_cam << std::endl;
@@ -52,30 +51,18 @@ TrackingMainWindow::TrackingMainWindow(char *camera_configuration_file, int devi
     setCentralWidget(mdi_area_);
 
     output_win_ = new iu::Qt5ImageGpuWidget(iu::Size<2>(parameters_.output_size_x,parameters_.output_size_y),this);
-    events_win_ = new iu::Qt5ImageGpuWidget(iu::Size<2>(width*scale,height*scale),this);
     QMdiSubWindow* window =  mdi_area_->addSubWindow(output_win_);
     window->setGeometry(QRect(0,0,parameters_.output_size_x+10,parameters_.output_size_y+40));
     window->setWindowTitle("Output Map");
     window->setWindowFlags(Qt::CustomizeWindowHint|Qt::WindowTitleHint);
     window->setMaximumSize(QSize(parameters_.output_size_x+10,parameters_.output_size_y+40));
     window->setMinimumSize(QSize(parameters_.output_size_x+10,parameters_.output_size_y+40));
-    window =  mdi_area_->addSubWindow(events_win_);
-
-    window->setGeometry(QRect(parameters_.output_size_x+10,0,width*scale+10,height*scale+40));
-    window->setWindowFlags(Qt::CustomizeWindowHint|Qt::WindowTitleHint);
-    window->setMaximumSize(QSize(width*scale+10,height*scale+40));
-    window->setMinimumSize(QSize(width*scale+10,height*scale+40));
-    window->setWindowTitle("Current Events");
 
     status_bar_ = statusBar();
-//    update_gl_timer_.setInterval(16);
-//    connect(&update_gl_timer_,SIGNAL(timeout()),output_win_,SLOT(repaint()));
 
     show();
 
     while(!output_win_->isValid())    // wait until events are processed and window is created
-        QApplication::instance()->processEvents();
-    while(!events_win_->isValid())    // wait until events are processed and window is created
         QApplication::instance()->processEvents();
 
 
@@ -104,14 +91,11 @@ TrackingMainWindow::TrackingMainWindow(char *camera_configuration_file, int devi
     action_start_ = new QAction(QIcon(":play.png"),tr("&Start algorithm"),this);
     action_stop_ = new QAction(QIcon(":pause.png"),tr("S&top algorithm"),this);
     action_camera_ = new QAction(QIcon(":camera.png"),tr("St&art camera"),this);
-    check_just_display_ = new QCheckBox("Just Display Events?");
-    check_just_display_->setChecked(false);
-    check_just_display_->setToolTip("Display the input events without reconstruction");
     check_show_camera_pose_ = new QCheckBox("Show camera pose?");
     check_show_camera_pose_->setChecked(true);
     check_show_camera_pose_->setToolTip("Display the current estimated pose");
     check_show_input_events_ = new QCheckBox("Show input events?");
-    check_show_input_events_->setChecked(false);
+    check_show_input_events_->setChecked(true);
     check_show_input_events_->setToolTip("Display the current events");
 
     QGroupBox* parameters = new QGroupBox;
@@ -133,10 +117,9 @@ TrackingMainWindow::TrackingMainWindow(char *camera_configuration_file, int devi
     layout->addWidget(spin_iterations_,        2, 1, 1, 1);
     layout->addWidget(label_acceleration,      3, 0, 1, 1);
     layout->addWidget(spin_acceleration_,      3, 1, 1, 1);
-    layout->addWidget(check_just_display_,     4, 0, 1, 2);
-    layout->addWidget(check_show_camera_pose_ ,5, 0, 1, 2);
-    layout->addWidget(check_show_input_events_,6, 0, 1, 2);
-    layout->addItem(space,                     7, 0,-1,-1);
+    layout->addWidget(check_show_camera_pose_ ,4, 0, 1, 2);
+    layout->addWidget(check_show_input_events_,5, 0, 1, 2);
+    layout->addItem(space,                     6, 0,-1,-1);
 
     parameters->setLayout(layout);
     dock_->setWidget(parameters);
@@ -148,14 +131,11 @@ TrackingMainWindow::TrackingMainWindow(char *camera_configuration_file, int devi
     connect(spin_image_skip_,SIGNAL(valueChanged(int)),tracking_worker_,SLOT(updateImageSkip(int)));
     connect(spin_iterations_,SIGNAL(valueChanged(int)),tracking_worker_,SLOT(updateIterations(int)));
     connect(spin_acceleration_,SIGNAL(valueChanged(double)),tracking_worker_,SLOT(updateAcceleration(double)));
-    connect(tracking_worker_,SIGNAL(update_output(iu::ImageGpu_32f_C1*,float,float)),output_win_,SLOT(update_image(iu::ImageGpu_32f_C1*,float,float)));
     connect(tracking_worker_,SIGNAL(update_output(iu::ImageGpu_8u_C4*)),output_win_,SLOT(update_image(iu::ImageGpu_8u_C4*)));
-    connect(tracking_worker_,SIGNAL(update_events(iu::ImageGpu_32f_C1*,float,float)),events_win_,SLOT(update_image(iu::ImageGpu_32f_C1*,float,float)));
     connect(tracking_worker_,SIGNAL(update_info(const QString&,int)),status_bar_,SLOT(showMessage(const QString&,int)));
     connect(action_start_,SIGNAL(triggered(bool)),this,SLOT(startTracking()));
     connect(action_stop_,SIGNAL(triggered(bool)),this,SLOT(stopTracking()));
     connect(action_camera_,SIGNAL(triggered(bool)),this,SLOT(startCamera()));
-    connect(check_just_display_,SIGNAL(clicked(bool)),tracking_worker_,SLOT(updateJustDisplay(bool)));
     connect(check_show_camera_pose_,SIGNAL(clicked(bool)),tracking_worker_,SLOT(updateShowCameraPose(bool)));
     connect(check_show_input_events_,SIGNAL(clicked(bool)),tracking_worker_,SLOT(updateShowInputEvents(bool)));
 
@@ -190,7 +170,7 @@ TrackingMainWindow::TrackingMainWindow(char *camera_configuration_file, int devi
 
     // Window title
     setWindowTitle("Real-Time DVS Tracking");
-    setGeometry(QRect(0,0,parameters_.output_size_x+width*scale+10+dock_->geometry().width()+220,(std::max(height*scale,parameters_.output_size_y)+10)+90));
+    setGeometry(QRect(0,0,parameters_.output_size_x+10+dock_->geometry().width()+220,(parameters_.output_size_y+10)+90));
     setWindowIcon(QIcon(":vlo_logo.png"));
 }
 

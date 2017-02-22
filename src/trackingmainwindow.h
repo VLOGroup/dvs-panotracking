@@ -59,7 +59,6 @@ class TrackingMainWindow : public QMainWindow
     void readevents(std::string filename);
 
     iu::Qt5ImageGpuWidget *output_win_;
-    iu::Qt5ImageGpuWidget *events_win_;
     std::vector<Event> events_;
     TrackingWorker *tracking_worker_;
     DVSCameraWorker *camera_worker_;
@@ -74,7 +73,6 @@ class TrackingMainWindow : public QMainWindow
     QSpinBox *spin_image_skip_;
     QSpinBox *spin_events_per_image_;
     QDoubleSpinBox *spin_acceleration_;
-    QCheckBox *check_just_display_;
     QCheckBox *check_show_camera_pose_;
     QCheckBox *check_show_input_events_;
 

@@ -42,8 +42,8 @@ int main(int argc, char**argv)
     }
 
     int deviceNumber = 0;
-    if (numDevices > 1)
-        deviceNumber = 1;
+//    if (numDevices > 1)
+//        deviceNumber = 1;
 
     QApplication app(argc, argv);
     TrackingMainWindow window(argv[1],deviceNumber);
