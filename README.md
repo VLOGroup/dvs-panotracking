@@ -1,4 +1,4 @@
-# DVS Panoramic Tracking
+# Real-Time Panoramic Tracking for Event Cameras
 This repository provides software for our publication "Real-Time Panoramic Tracking for Event Cameras", ICCP 2017.
 
 If you use this code please cite the following publication:
