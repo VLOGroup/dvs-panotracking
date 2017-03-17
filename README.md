@@ -1,7 +1,7 @@
 # Real-Time Panoramic Tracking for Event Cameras
 This repository provides software for our publication "Real-Time Panoramic Tracking for Event Cameras", ICCP 2017.
 
-If you use this code please cite the following publication:
+If you use this code please cite the following publication (https://arxiv.org/abs/1703.05161):
 ~~~
 @inproceedings{reinbacher_iccp2017,
   author = {Christian Reinbacher and Gottfried Munda and Thomas Pock},
